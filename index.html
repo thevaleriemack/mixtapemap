@@ -60,30 +60,51 @@
             
             var force = d3.forceSimulation() 
             .force("charge", d3.forceManyBody().strength(-700).distanceMin(100).distanceMax(1000)) 
-            .force("link", d3.forceLink().id(function(d) { return d.index })) 
+            .force("link", d3.forceLink().id(function(d) { return d.index }).iterations(10)) 
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("y", d3.forceY(0.001))
-            .force("x", d3.forceX(0.001));
+            .force("y", d3.forceY(0))
+            .force("x", d3.forceX(0))
+            .alphaTarget(1);
             
             var current_nodes = [];
             var current_links = [];
             
+            var loading = svg.append("text")
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "middle")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 10)
+            .text("Simulating. One moment please…");
+            
+            function updateMap(n) {
+//                if (!n[0].subnodes) {
+//                    $("#shareables").css("display")
+//                }
+                new_nodes = [n];
+                new_nodes[0].subnodes.forEach(function(d) {
+                    new_nodes.push(d);
+                });
+                svg.selectAll("*").remove();
+                showMap(new_nodes);
+            }
+            
             function showMap(nodes) {
-                var links = [];
                 // add links
+                var links = [];
                 for (var i = 1; i < nodes.length; i++) {
                     links.push({"source":0, "target": i})
                 }
-                
                 // start force
                 force.nodes(nodes).force("link").links(links);
                 
+                // place links underneath
                 var link = svg.selectAll(".link")
                 .data(links)
                 .enter()
                 .append("line")
                 .attr("class", "link");
                 
+                // place nodes
                 // bind
                 var node = svg.selectAll(".node").data(nodes).enter().append("g");
                 
@@ -98,11 +119,7 @@
                 .on("click", function(d) {
                     d.group = "red";
                     console.log(d);
-                    new_nodes = [d];
-                    new_nodes[0].subnodes.forEach(function(n) {
-                        new_nodes.push(n);
-                    });
-                    renderNodes(new_nodes);
+                    updateMap(d);
                 });
             
                 node.append("text")
@@ -116,17 +133,10 @@
                 });
                 
                 force.on("tick", function() {
-                    link.attr("x1", function (d) {
-                            return d.source.x;
-                        })
-                        .attr("y1", function (d) {
-                            return d.source.y;
-                        })
-                        .attr("x2", function (d) {
-                            return d.target.x;
-                        })
-                        .attr("y2", function (d) {
-                            return d.target.y;
+                    link.attr("x1", function (d) { return d.source.x; })
+                        .attr("y1", function (d) { return d.source.y; })
+                        .attr("x2", function (d) { return d.target.x; })
+                        .attr("y2", function (d) { return d.target.y;
                         });
                     node.attr("transform", function (d) {
                         return "translate(" + d.x + "," + d.y + ")";
@@ -138,9 +148,8 @@
                 if (error) throw error;
                 // add nodes
                 current_nodes = json.nodes;
-                current_nodes[0].subnodes.forEach(function(n) {
-                    current_nodes.push(n);
-                });
+                current_nodes[0].subnodes.forEach(function(n) { current_nodes.push(n); });
+                
                 showMap(current_nodes);
             });
             

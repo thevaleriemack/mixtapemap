@@ -10,16 +10,16 @@
                     "subnodes": [
                         {
                             "name": "Song 2",
-                            "group": "#ccc"
+                            "group": "blue"
                         }, {
                             "name": "Song 3",
-                            "group": "#ccc"
+                            "group": "blue"
                         }, {
                             "name": "Song 4",
-                            "group": "#ccc"
+                            "group": "blue"
                         }, {
                             "name": "Song 5",
-                            "group": "#ccc"
+                            "group": "blue"
                         }
                     ]
                 }, {
