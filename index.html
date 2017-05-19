@@ -4,34 +4,43 @@
         <!--  Please note Bootstrap is only used solely for the grid and table layouts.  -->
         <title>5100 Masters Capstone - Created by Denay Mack (dgm97)</title>
         <link rel="stylesheet/less" type="text/css" href="assets/stylesheets/main.less" />
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         <script src="https://d3js.org/d3.v4.min.js"></script>
         <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/less.js/2.7.2/less.min.js"></script>
-        <script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
-        <script src="data.js"></script>
+        <script src="http://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
+        <script src="script.js"></script>
     </head>
     <body>
         <div class="container">
+            <div id="splash">
+                <button type="button" id="closeSplash">
+                    <span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
+                </button>
+                <h1>About</h1>
+                <p>This website is a capstone project for INFO/CS 5100 at Cornell University. Users can create a 'mixtape' (aka playlist) by selecting songs that they like. Data was collected by way of AJAX calls to the Spotify API which makes for a dynamic and interactive experience for our users.</p>
+                <p>Begin by typing the name of a music artist and clicking start or pressing the return key. A popular song by that artist will be randomly chosen as the first song in the mixtape. Five new song options from similar artists will appear for every new song that gets added to the playlist. The user will be able to see a data visualization of how different songs relate to each other and compare the results to their own expectations and preferences.</p>
+            </div>
             <header>
                 <h1>Mix Tape Map</h1>
-                <h2>5100 Masters Capstone</h2>
                 <ul>
-                    <li>About</li>
+                    <li id="about"><a>About</a></li>
                 </ul>
+                <h2>5100 Masters Capstone</h2>
+                <p id="errorMsg"></p>
             </header>
             <div class="row">
                 <div class="col-lg-2">
+                </div>
+                <div class="col-lg-8 col-lg-offset-2">
                     <div id="search">
                         <form id="searchForm">
-                            <input type="text" id="query" value="" placeholder="Type an Artist Name"/>
-                            <button type="button" id="searchButton">Start</button>
+                            <input type="text" id="query" value="" placeholder="Type an Artist Name" class="searchFormButtons"/>
+                            <button type="button" id="searchButton" class="searchFormButtons">Start</button>
                         </form>
                         <ul id="searchResults">
                         </ul>
                     </div>
-                </div>
-                <div class="col-lg-8">
                     <svg id="visualization">
                     </svg>            
                     <!-- <table class="table">
@@ -59,10 +68,8 @@
         <script>
             var artist;
             var firstNode;
-            var lastArtistSong = [];
-            var similarSongs = [];
             
-            //**** get artist ****//
+            //**** get artist from search ****//
             function showSearchResults(res) {
                 $("#searchResults").children().remove();
                 res.forEach(function(sr) {
@@ -78,57 +85,100 @@
                         type: 'artist',
                         limit: 5
                     },
+                    beforeSend: function() {
+                        
+                    },
                     success: function (response) {
                         showSearchResults(response.artists.items);
+                    },
+                    error: function() {
+                        reportError("No result found. Please check your wifi connection!");
                     }
                 });
             }
             $("#searchButton").click(function() {
                 searchArtist($('#query').val());
             });
-//            var getArtistSong = function(artistId) {
-//                $.ajax({
-//                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/top-tracks',
-//                    data: {
-//                        country: 'US'
-//                    },
-//                    success: function (response) {
-//                        var target = getRandomIntInclusive(0,9);
-//                        lastArtistSong.pop();
-//                        lastArtistSong.push(response.tracks[target]);
-//                    }
-//                });
-//            }
-//            var getSimilarSongs = function(artistId) {
-//                $.ajax({
-//                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/related-artists',
-//                    success: function (response) {
-//                        similarSongs = [];
-//                        var output = response.artists;
-//                        for (var i=0; i<5; i++) {
-//                            var target = getRandomIntInclusive(0,output.length-1);
-//                            similarSongs.push(output[target]);
-//                            output.splice(target, 1);
-//                        }
-//                    }
-//                });
-//            }
-            //**** get song ****//
+            
+            var start_nodes;
+            var similarArtists = [];
+            
+            //**** get first song ****//
+            var getFirstSong = function(artistId) {
+                 $.ajax({
+                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/top-tracks',
+                    data: {
+                        country: 'US'
+                    },
+                    success: function(res) {
+                        var target = getRandomIntInclusive(0,9);
+                        start_nodes.push(res.tracks[target]);
+                        getSimilarArtists(artist.id);
+                    }
+                });
+            }
+            //**** get 5 similar songs ****//
+            var getSimilarArtists = function(artistId) {
+                $.ajax({
+                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/related-artists',
+                    success: function (res) {
+                        var output = res.artists;
+                        for (var i=0; i<5; i++) {
+                            var target = getRandomIntInclusive(0,output.length-1);
+                            similarArtists.push(output[target]);
+                            output.splice(target, 1);
+                        }
+                        getSimilarSongs(similarArtists, function(res) {
+                            start_nodes.concat(res);
+                            showMap(start_nodes);
+                        });
+                    }
+                });
+            }
+            function getSimilarSongs(similarArtists, callback){
+                var similarSongs = [];
+                var expecting = similarArtists.length;
+                similarArtists.forEach(function(d, i) {
+                    $.ajax({
+                        url: 'https://api.spotify.com/v1/artists/'+d.id+'/top-tracks',
+                        data: { country: 'US' },
+                        success: function(res) {
+                            var target = getRandomIntInclusive(0,9);
+                            similarSongs.push(res.tracks[target]);
+                            if(--expecting === 0) {
+                                callback(similarSongs);
+                            }
+                        }
+                    })
+                })
+            }
+            var getArtistSong = function(artistId) {
+                $.ajax({
+                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/top-tracks',
+                    data: {
+                        country: 'US'
+                    },
+                    success: function(res) {
+                        var target = getRandomIntInclusive(0,9);
+                        start_nodes.push(res.tracks[target]);
+                        
+                        requestCallback.addCallbackToQueue(true, function() {
+                            alert('Im the first callback');
+                        });
+                        getSimilarSongs(artist.id)
+                        showMap(start_nodes);
+                    }
+                });
+            }
+            
+            //**** begin simulation ****//
             $(document).on('click', '.searchResult', function () {
                 // simulation begins once user selects artist
                 console.log("user selected "+this.id);
                 artist = this;
+                getFirstSong(artist.id);
+                
                 $("#search").remove();
-                
-//                getArtistSong(artist.id);
-//                firstNode = lastArtistSong[0];
-//                start_nodes.push(firstNode);
-                
-//                getSimilarSongs(artist.id)
-//                childNodes = similarSongs;
-//                start_nodes.push(childNodes);
-                
-                showMap(start_nodes);
             });
             /*************************
             ********* app.js *********
