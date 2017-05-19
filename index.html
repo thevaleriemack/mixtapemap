@@ -70,16 +70,19 @@
             var selected_nodes = [];
             
             function updateMap(n) {
+                // add new selection
                 n.group = "red";
+                selected_nodes.push(n);
+                // check for subnodes
                 if (!n.subnodes) {
                     $("#shareables").css("display")
                 } else {
-                    selected_nodes.push(start_nodes[0]);
                     new_nodes = [n];
                     new_nodes[0].subnodes.forEach(function(d) {
                         new_nodes.push(d);
                     });
                     svg.selectAll("*").remove();
+                    
                     showMap(new_nodes);
                 }
             }
@@ -131,7 +134,11 @@
                 .on("mouseout", hideData)
                 .on("click", function(d) {
                     console.log(d);
-                    updateMap(d);
+                    if (d==nodes[0]) {
+                        $("#errorMsg").html("That song is already on your list :) Click a new song to add.");
+                    } else {
+                        updateMap(d);
+                    }
                 });
             
                 node.append("text")
@@ -165,6 +172,7 @@
                 start_nodes = json.nodes;
                 start_nodes[0].subnodes.forEach(function(n) { start_nodes.push(n); });
                 showMap(start_nodes);
+                selected_nodes.push(start_nodes[0]);
             });
             
             function showData() {
