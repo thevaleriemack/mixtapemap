@@ -59,36 +59,33 @@
             .attr("height", height);
             
             var force = d3.forceSimulation() 
-            .force("charge", d3.forceManyBody().strength(-700).distanceMin(100).distanceMax(1000)) 
-            .force("link", d3.forceLink().id(function(d) { return d.index }).iterations(10)) 
+            .force("charge", d3.forceManyBody().strength(-80).distanceMin(100).distanceMax(1000)) 
+            .force("link", d3.forceLink().distance(100).id(function(d) { return d.index }).iterations(10)) 
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("y", d3.forceY(0))
-            .force("x", d3.forceX(0))
+            .force("y", d3.forceY(0.1))
+            .force("x", d3.forceX(0.1))
             .alphaTarget(1);
             
-            var current_nodes = [];
-            var current_links = [];
-            
-            var loading = svg.append("text")
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "middle")
-            .attr("font-family", "sans-serif")
-            .attr("font-size", 10)
-            .text("Simulating. One moment please…");
+            var start_nodes = [];
+            var selected_nodes = [];
             
             function updateMap(n) {
-//                if (!n[0].subnodes) {
-//                    $("#shareables").css("display")
-//                }
-                new_nodes = [n];
-                new_nodes[0].subnodes.forEach(function(d) {
-                    new_nodes.push(d);
-                });
-                svg.selectAll("*").remove();
-                showMap(new_nodes);
+                n.group = "red";
+                if (!n.subnodes) {
+                    $("#shareables").css("display")
+                } else {
+                    selected_nodes.push(start_nodes[0]);
+                    new_nodes = [n];
+                    new_nodes[0].subnodes.forEach(function(d) {
+                        new_nodes.push(d);
+                    });
+                    svg.selectAll("*").remove();
+                    showMap(new_nodes);
+                }
             }
             
             function showMap(nodes) {
+                
                 // add links
                 var links = [];
                 for (var i = 1; i < nodes.length; i++) {
@@ -104,8 +101,24 @@
                 .append("line")
                 .attr("class", "link");
                 
+                var legacy = svg.selectAll(".node").data(selected_nodes).enter().append("g");
+                legacy.append("circle")
+                .attr("r", 13)
+                .attr('fill', "#ccc")
+                .on("mouseover", showData)
+                .on("mouseout", hideData);
+                
+                legacy.append("text")
+                .attr("dx", 30)
+                .attr("dy", 5)
+                .style("font-family", "sans-serif")
+                .style("font-size", "18px")
+                .attr("fill", "#777")
+                .text(function (d) {
+                    return d.name
+                });
+                
                 // place nodes
-                // bind
                 var node = svg.selectAll(".node").data(nodes).enter().append("g");
                 
                 node.append('circle')
@@ -117,7 +130,6 @@
                 .on("mouseover", showData)
                 .on("mouseout", hideData)
                 .on("click", function(d) {
-                    d.group = "red";
                     console.log(d);
                     updateMap(d);
                 });
@@ -134,11 +146,14 @@
                 
                 force.on("tick", function() {
                     link.attr("x1", function (d) { return d.source.x; })
-                        .attr("y1", function (d) { return d.source.y; })
-                        .attr("x2", function (d) { return d.target.x; })
-                        .attr("y2", function (d) { return d.target.y;
-                        });
+                    .attr("y1", function (d) { return d.source.y; })
+                    .attr("x2", function (d) { return d.target.x; })
+                    .attr("y2", function (d) { return d.target.y;
+                    });
                     node.attr("transform", function (d) {
+                        return "translate(" + d.x + "," + d.y + ")";
+                    });
+                    legacy.attr("transform", function (d) {
                         return "translate(" + d.x + "," + d.y + ")";
                     });
                 });
@@ -147,10 +162,9 @@
             d3.json("songs.json", function (error, json) {
                 if (error) throw error;
                 // add nodes
-                current_nodes = json.nodes;
-                current_nodes[0].subnodes.forEach(function(n) { current_nodes.push(n); });
-                
-                showMap(current_nodes);
+                start_nodes = json.nodes;
+                start_nodes[0].subnodes.forEach(function(n) { start_nodes.push(n); });
+                showMap(start_nodes);
             });
             
             function showData() {
