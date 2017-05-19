@@ -9,6 +9,7 @@
         <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/less.js/2.7.2/less.min.js"></script>
         <script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
+        <script src="data.js"></script>
     </head>
     <body>
         <div class="container">
@@ -20,7 +21,16 @@
                 </ul>
             </header>
             <div class="row">
-                <div class="col-lg-2"></div>
+                <div class="col-lg-2">
+                    <div id="search">
+                        <form id="searchForm">
+                            <input type="text" id="query" value="" placeholder="Type an Artist Name"/>
+                            <button type="button" id="searchButton">Start</button>
+                        </form>
+                        <ul id="searchResults">
+                        </ul>
+                    </div>
+                </div>
                 <div class="col-lg-8">
                     <svg id="visualization">
                     </svg>            
@@ -47,6 +57,37 @@
             </div>
         </div>
         <script>
+            var artistId;
+            function showSearchResults(res) {
+                res.forEach(function(sr) {
+                    $("#searchResults").append("<li id='"+sr.id+"' class='searchResult'>"+sr.name+"</li>");
+                })
+            }
+            var searchArtist = function(query) {
+                console.log('user searched for '+query);
+                $.ajax({
+                    url: 'https://api.spotify.com/v1/search',
+                    data: {
+                        q: query,
+                        type: 'artist',
+                        limit: 5
+                    },
+                    success: function (response) {
+                        tempRes = response;
+                        showSearchResults(response.artists.items);
+                    }
+                });
+            }
+            $("#searchButton").click(function() {
+                searchArtist($('#query').val());
+            });
+            $(document).on('click', '.searchResult', function () {
+                console.log("user selected "+this.id);
+                artistId = this.id;
+                $("#search").remove();
+                showMap(start_nodes);
+            });
+            
             /*************************
             ********* app.js *********
             **************************/
@@ -171,7 +212,6 @@
                 // add nodes
                 start_nodes = json.nodes;
                 start_nodes[0].subnodes.forEach(function(n) { start_nodes.push(n); });
-                showMap(start_nodes);
                 selected_nodes.push(start_nodes[0]);
             });
             
