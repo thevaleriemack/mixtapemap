@@ -57,8 +57,14 @@
             </div>
         </div>
         <script>
-            var artistId;
+            var artist;
+            var firstNode;
+            var lastArtistSong = [];
+            var similarSongs = [];
+            
+            //**** get artist ****//
             function showSearchResults(res) {
+                $("#searchResults").children().remove();
                 res.forEach(function(sr) {
                     $("#searchResults").append("<li id='"+sr.id+"' class='searchResult'>"+sr.name+"</li>");
                 })
@@ -73,7 +79,6 @@
                         limit: 5
                     },
                     success: function (response) {
-                        tempRes = response;
                         showSearchResults(response.artists.items);
                     }
                 });
@@ -81,13 +86,50 @@
             $("#searchButton").click(function() {
                 searchArtist($('#query').val());
             });
+//            var getArtistSong = function(artistId) {
+//                $.ajax({
+//                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/top-tracks',
+//                    data: {
+//                        country: 'US'
+//                    },
+//                    success: function (response) {
+//                        var target = getRandomIntInclusive(0,9);
+//                        lastArtistSong.pop();
+//                        lastArtistSong.push(response.tracks[target]);
+//                    }
+//                });
+//            }
+//            var getSimilarSongs = function(artistId) {
+//                $.ajax({
+//                    url: 'https://api.spotify.com/v1/artists/'+artistId+'/related-artists',
+//                    success: function (response) {
+//                        similarSongs = [];
+//                        var output = response.artists;
+//                        for (var i=0; i<5; i++) {
+//                            var target = getRandomIntInclusive(0,output.length-1);
+//                            similarSongs.push(output[target]);
+//                            output.splice(target, 1);
+//                        }
+//                    }
+//                });
+//            }
+            //**** get song ****//
             $(document).on('click', '.searchResult', function () {
+                // simulation begins once user selects artist
                 console.log("user selected "+this.id);
-                artistId = this.id;
+                artist = this;
                 $("#search").remove();
+                
+//                getArtistSong(artist.id);
+//                firstNode = lastArtistSong[0];
+//                start_nodes.push(firstNode);
+                
+//                getSimilarSongs(artist.id)
+//                childNodes = similarSongs;
+//                start_nodes.push(childNodes);
+                
                 showMap(start_nodes);
             });
-            
             /*************************
             ********* app.js *********
             **************************/
