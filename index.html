@@ -19,7 +19,7 @@
                 </button>
                 <h1>About</h1>
                 <p>This website is a capstone project for INFO/CS 5100 at Cornell University. Users can create a 'mixtape' (aka playlist) by selecting songs that they like. Data was collected by way of AJAX calls to the Spotify API which makes for a dynamic and interactive experience for our users.</p>
-                <p>Begin by typing the name of a music artist and clicking start or pressing the return key. A popular song by that artist will be randomly chosen as the first song in the mixtape. Five new song options from similar artists will appear for every new song that gets added to the playlist. The user will be able to see a data visualization of how different songs relate to each other and compare the results to their own expectations and preferences.</p>
+                <p>Begin by typing the name of a music artist and clicking start. A popular song by that artist will be randomly chosen as the first song in the mixtape. Five new song options from similar artists will appear for every new song that gets added to the playlist. The user will be able to see a data visualization of how different songs relate to each other and compare the results to their own expectations and preferences. Larger nodes means a more popular song.</p>
             </div>
             <header>
                 <h1>Mix Tape Map</h1>
@@ -175,6 +175,8 @@
             var width = 700;
             var height = 700;
             
+            var popularityScale = d3.scalePow().domain([0,100]).range([2,30]);
+            
             var svg = d3.select("#visualization")
             .attr("width", width)
             .attr("height", height);
@@ -226,9 +228,15 @@
                 
                 node.append('circle')
                 .attr("class", "node")
-                .attr('r', 13)
+                .attr('r', function(d) {
+                    return popularityScale(d.popularity);
+                })
                 .attr('fill', function (d) {
-                    return d.group;
+                    if (nodes.indexOf(d)==0) {
+                        return "gold";
+                    } else {
+                        return "black";
+                    }
                 })
                 .on("mouseover", showData)
                 .on("mouseout", hideData)
@@ -237,6 +245,7 @@
                         $("#errorMsg").html("That song is already on your list :) Click a new song to add.");
                     } else {
                         updateMap(d);
+                        $("#errorMsg").html("");
                     }
                 });
             
