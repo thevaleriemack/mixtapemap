@@ -43,7 +43,10 @@
                     </div>
                     <svg id="visualization">
                     </svg>            
-                    <!-- <table class="table">
+                </div>
+                <div class="col-lg-2">
+<!--
+                    <table class="table">
                         <thead>
                             <tr>
                               <th>#</th>
@@ -60,9 +63,9 @@
                                 <td></td>
                             </tr>
                         </tbody>
-                    </table> -->
+                    </table> 
+-->
                 </div>
-                <div class="col-lg-2"></div>
             </div>
         </div>
         <script>
@@ -86,7 +89,7 @@
                         limit: 5
                     },
                     beforeSend: function() {
-                        
+                        // loader
                     },
                     success: function (response) {
                         showSearchResults(response.artists.items);
@@ -105,6 +108,7 @@
             
             //**** get first song ****//
             var getFirstSong = function(artistId) {
+                console.log(artistId);
                  $.ajax({
                     url: 'https://api.spotify.com/v1/artists/'+artistId+'/top-tracks',
                     data: {
@@ -117,12 +121,11 @@
                     }
                 });
             }
-            //**** get 5 similar songs ****//
+            //**** get 5 similar aritsts ****//
             var getSimilarArtists = function(artistId) {
                 $.ajax({
                     url: 'https://api.spotify.com/v1/artists/'+artistId+'/related-artists',
                     success: function (res) {
-                        console.log('getSimilarArtists ran');
                         var output = res.artists;
                         for (var i=0; i<5; i++) {
                             var target = getRandomIntInclusive(0,output.length-1);
@@ -133,22 +136,23 @@
                     }
                 });
             }
+            var similarSongs = [];
             function getSimilarSongs(similarArtists){
-                console.log('getSimilarSongs ran');
-                var similarSongs = [];
-                var expecting = similarArtists.length;
-                similarArtists.forEach(function(d, i) {
+                similarArtists.forEach(function(d) {
                     $.ajax({
                         url: 'https://api.spotify.com/v1/artists/'+d.id+'/top-tracks',
                         data: { country: 'US' },
                         success: function(res) {
                             var target = getRandomIntInclusive(0,9);
                             similarSongs.push(res.tracks[target]);
+                            if (similarSongs.length == 5) {
+                                console.log('we made it!');
+                                start_nodes = start_nodes.concat(similarSongs);
+                                showMap(start_nodes);
+                            }
                         }
                     })
                 })
-                console.log(similarSongs);
-                showMap(start_nodes);
             }
             var getArtistSong = function(artistId) {
                 $.ajax({
@@ -185,8 +189,8 @@
             .attr("height", height);
             
             var force = d3.forceSimulation() 
-            .force("charge", d3.forceManyBody().strength(-80).distanceMin(100).distanceMax(1000)) 
-            .force("link", d3.forceLink().distance(50).id(function(d) { return d.index }).iterations(10)) 
+            .force("charge", d3.forceManyBody().strength(-200).distanceMin(100).distanceMax(1000)) 
+            .force("link", d3.forceLink().distance(150).id(function(d) { return d.index }).iterations(10)) 
             .force("center", d3.forceCenter(width / 2, height / 2))
             .force("y", d3.forceY(0.1))
             .force("x", d3.forceX(0.1))
@@ -196,20 +200,13 @@
             
             function updateMap(n) {
                 // add new selection
-                n.group = "red";
                 selected_nodes.push(n);
                 // check for subnodes
-                if (!n.subnodes) {
-                    $("#shareables").css("display")
-                } else {
-                    new_nodes = [n];
-                    new_nodes[0].subnodes.forEach(function(d) {
-                        new_nodes.push(d);
-                    });
-                    svg.selectAll("*").remove();
-                    
-                    showMap(new_nodes);
-                }
+                start_nodes = [];
+                similarArtists = [];
+                svg.selectAll(".node").exit().remove();
+                svg.selectAll(".link").exit().remove();
+                getFirstSong(n.artists["0"].id);
             }
             
             function showMap(nodes) {
@@ -258,7 +255,6 @@
                 .on("mouseover", showData)
                 .on("mouseout", hideData)
                 .on("click", function(d) {
-                    console.log(d);
                     if (d==nodes[0]) {
                         $("#errorMsg").html("That song is already on your list :) Click a new song to add.");
                     } else {
