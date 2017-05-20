@@ -44,6 +44,7 @@
                         <ul id="searchResults">
                         </ul>
                     </div>
+                    <div id="tooltip"></div>
                     <svg id="visualization">
                     </svg>            
                 </div>
@@ -206,6 +207,13 @@
                 getSelectedSong(n);
             }
             
+            function tooltipHtml(n){	/* function to create html content string in tooltip div. */
+                return "<h4>"+n.name+"</h4><ul>"+
+                "<li>Artist: "+n.artists[0].name+"</li>"+
+                "<li>Popularity: "+n.popularity+"</li>"
+                "</ul>";
+            }
+            
             function showMap(nodes) {
                 
                 // add links
@@ -272,8 +280,11 @@
             }
             
             
-            function showData() {
-                return;
+            function showData(d) {
+                d3.select("#tooltip").transition().duration(200).style("opacity", .9);
+                d3.select("#tooltip").html(tooltipHtml(d))
+                .style("left", (d3.event.pageX - 600) + "px")
+                .style("top", (d3.event.pageY - 100) + "px");
             }
             function hideData() {
                 return;
