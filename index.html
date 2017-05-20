@@ -30,9 +30,12 @@
                 <p id="errorMsg"></p>
             </header>
             <div class="row">
-                <div class="col-lg-2">
+                <div class="col-lg-3">
+                    <p>Added Tracks</p>
+                    <ul id="mixtape">
+                    </ul>
                 </div>
-                <div class="col-lg-8">
+                <div class="col-lg-6">
                     <div id="search">
                         <form id="searchForm">
                             <input type="text" id="query" value="" placeholder="Type an Artist Name" class="searchFormButtons"/>
@@ -44,33 +47,14 @@
                     <svg id="visualization">
                     </svg>            
                 </div>
-                <div class="col-lg-2">
-<!--
-                    <table class="table">
-                        <thead>
-                            <tr>
-                              <th>#</th>
-                              <th>Song</th>
-                              <th>Artist</th>
-                              <th>Play</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th scope="row">1</th>
-                                <td>Redemption Song</td>
-                                <td>Bob Marley</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table> 
--->
+                <div class="col-lg-3">
                 </div>
             </div>
         </div>
         <script>
             var artist;
             var firstNode;
+            var selected_nodes = [];
             
             //**** get artist from search ****//
             function showSearchResults(res) {
@@ -117,6 +101,8 @@
                     success: function(res) {
                         var target = getRandomIntInclusive(0,9);
                         start_nodes.push(res.tracks[target]);
+                        selected_nodes.push(start_nodes[0]);
+                        $("#mixtape").append("<li id='"+start_nodes[0].id+"' class='searchResult'>"+start_nodes[0].name+"</li>");
                         getSimilarArtists(artist.id);
                     }
                 });
@@ -136,8 +122,8 @@
                     }
                 });
             }
-            var similarSongs = [];
             function getSimilarSongs(similarArtists){
+                var similarSongs = [];
                 similarArtists.forEach(function(d) {
                     $.ajax({
                         url: 'https://api.spotify.com/v1/artists/'+d.id+'/top-tracks',
@@ -163,7 +149,7 @@
                     success: function(res) {
                         var target = getRandomIntInclusive(0,9);
                         start_nodes.push(res.tracks[target]);
-                        getSimilarArtists(artist.id)
+                        getSimilarArtists(artist.id);
                     }
                 });
             }
@@ -196,17 +182,22 @@
             .force("x", d3.forceX(0.1))
             .alphaTarget(1);
             
-            var selected_nodes = [];
-            
             function updateMap(n) {
                 // add new selection
                 selected_nodes.push(n);
                 // check for subnodes
                 start_nodes = [];
                 similarArtists = [];
-                svg.selectAll(".node").exit().remove();
-                svg.selectAll(".link").exit().remove();
-                getFirstSong(n.artists["0"].id);
+                svg.selectAll(".node").remove();
+                svg.selectAll(".link").remove();
+                svg.selectAll('text').remove();
+                svg.selectAll('g').remove();
+                
+                
+                selected_nodes.push(n);
+                $("#mixtape").append("<li id='"+n.id+"' class='searchResult'>"+n.name+"</li>");
+                
+                getSimilarArtists(n.artists["0"].id);
             }
             
             function showMap(nodes) {
@@ -225,23 +216,6 @@
                 .enter()
                 .append("line")
                 .attr("class", "link");
-                
-                var legacy = svg.selectAll(".node").data(selected_nodes).enter().append("g");
-                legacy.append("circle")
-                .attr("r", 13)
-                .attr('fill', "#ccc")
-                .on("mouseover", showData)
-                .on("mouseout", hideData);
-                
-                legacy.append("text")
-                .attr("dx", 30)
-                .attr("dy", 5)
-                .style("font-family", "sans-serif")
-                .style("font-size", "18px")
-                .attr("fill", "#777")
-                .text(function (d) {
-                    return d.name
-                });
                 
                 // place nodes
                 var node = svg.selectAll(".node").data(nodes).enter().append("g");
@@ -279,9 +253,6 @@
                     .attr("y2", function (d) { return d.target.y;
                     });
                     node.attr("transform", function (d) {
-                        return "translate(" + d.x + "," + d.y + ")";
-                    });
-                    legacy.attr("transform", function (d) {
                         return "translate(" + d.x + "," + d.y + ")";
                     });
                 });
