@@ -107,6 +107,11 @@
                     }
                 });
             }
+            //**** get selected song ****//
+            var getSelectedSong = function(song) {
+                start_nodes.push(song);
+                getSimilarArtists(song.artists[0].id);
+            }
             //**** get 5 similar aritsts ****//
             var getSimilarArtists = function(artistId) {
                 $.ajax({
@@ -193,11 +198,10 @@
                 svg.selectAll('text').remove();
                 svg.selectAll('g').remove();
                 
-                
                 selected_nodes.push(n);
                 $("#mixtape").append("<li id='"+n.id+"' class='searchResult'>"+n.name+"</li>");
                 
-                getSimilarArtists(n.artists["0"].id);
+                getSelectedSong(n);
             }
             
             function showMap(nodes) {
